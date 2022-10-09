@@ -1,0 +1,258 @@
+#include <stdio.h>
+#include "stm32f10x.h"
+#include "stm32f10x_gpio.h"
+#include "sys.h"
+
+void cgq (void)//´«¸ÐÆ÷
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+  
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_8 |GPIO_Pin_9 |GPIO_Pin_10|GPIO_Pin_11 ;
+  GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING ;
+//  GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+  
+  GPIO_Init(GPIOA,&GPIO_InitStructure);
+
+}
+/************************************************************************/
+void MOTER_Init1(void)
+{
+	GPIO_InitTypeDef GPIO_IS1 ;
+	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+	
+	GPIO_IS1.GPIO_Mode = GPIO_Mode_AF_PP ;
+	GPIO_IS1.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 |GPIO_Pin_6  ;//A0¡¢B6ÓÐÎÊÌâ
+	GPIO_IS1.GPIO_Speed = GPIO_Speed_50MHz ;
+	
+	GPIO_Init(GPIOB,&GPIO_IS1) ;
+}
+void MOTER_Init2(void)//µç»ú1
+{
+	GPIO_InitTypeDef GPIO_IS2 ;
+	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+	
+	GPIO_IS2.GPIO_Mode = GPIO_Mode_AF_PP ;
+	GPIO_IS2.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 |GPIO_Pin_3  ;
+	GPIO_IS2.GPIO_Speed = GPIO_Speed_50MHz ;
+	
+	GPIO_Init(GPIOA,&GPIO_IS2) ;
+}
+
+/************************************************************/
+void PWM_Init1(u16 arr , u16 psc)
+{
+	TIM_TimeBaseInitTypeDef TIM_TBS1 ;
+	TIM_OCInitTypeDef TIM_OCIS1 ;
+	
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4,ENABLE);
+	
+	MOTER_Init1() ;
+	
+	TIM_DeInit(TIM4) ;
+	
+	TIM_TBS1.TIM_Period = arr ;
+	TIM_TBS1.TIM_ClockDivision = 0;
+	TIM_TBS1.TIM_CounterMode = TIM_CounterMode_Up ;
+	TIM_TBS1.TIM_Prescaler = psc ;
+	TIM_TBS1.TIM_RepetitionCounter = 0 ;
+	
+	TIM_TimeBaseInit (TIM4,&TIM_TBS1) ;
+	
+	TIM_OCIS1.TIM_OCMode = TIM_OCMode_PWM2 ;
+	TIM_OCIS1.TIM_OutputState = TIM_OutputState_Enable ;
+	TIM_OCIS1.TIM_Pulse = 0 ;
+	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_Low ;
+//	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_High ;
+  TIM_OC1Init (TIM4,&TIM_OCIS1) ;
+	TIM_OC2Init (TIM4,&TIM_OCIS1) ;
+	TIM_OC3Init (TIM4,&TIM_OCIS1) ;
+	TIM_OC4Init (TIM4,&TIM_OCIS1) ;
+	
+	TIM_OC1PreloadConfig (TIM2,TIM_OCPreload_Enable );
+	TIM_OC2PreloadConfig (TIM4,TIM_OCPreload_Enable );
+	TIM_OC3PreloadConfig (TIM4,TIM_OCPreload_Enable );
+	TIM_OC4PreloadConfig (TIM4,TIM_OCPreload_Enable );
+	
+	TIM_Cmd(TIM4,ENABLE) ;
+}
+
+void PWM_Init2(u16 arr , u16 psc)
+{
+	TIM_TimeBaseInitTypeDef TIM_TBS2 ;
+	TIM_OCInitTypeDef TIM_OCIS2 ;
+	
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2,ENABLE);
+	
+	MOTER_Init2() ;
+	
+	TIM_DeInit(TIM1) ;
+	
+	TIM_TBS2.TIM_Period = arr ;
+	TIM_TBS2.TIM_ClockDivision = 0;
+	TIM_TBS2.TIM_CounterMode = TIM_CounterMode_Up ;
+	TIM_TBS2.TIM_Prescaler = psc ;
+	TIM_TBS2.TIM_RepetitionCounter = 0 ;
+	
+	TIM_TimeBaseInit (TIM2,&TIM_TBS2) ;
+	
+	TIM_OCIS2.TIM_OCMode = TIM_OCMode_PWM2 ;
+	TIM_OCIS2.TIM_OutputState = TIM_OutputState_Enable ;
+	TIM_OCIS2.TIM_Pulse = 0 ;
+	TIM_OCIS2.TIM_OCPolarity = TIM_OCPolarity_Low ;
+//	TIM_OCIS2.TIM_OCPolarity = TIM_OCPolarity_High ;
+  TIM_OC1Init (TIM2,&TIM_OCIS2) ;
+	TIM_OC2Init (TIM2,&TIM_OCIS2) ;
+	TIM_OC3Init (TIM2,&TIM_OCIS2) ;
+	TIM_OC4Init (TIM2,&TIM_OCIS2) ;
+	
+	TIM_OC1PreloadConfig (TIM2,TIM_OCPreload_Enable );
+	TIM_OC2PreloadConfig (TIM2,TIM_OCPreload_Enable );
+	TIM_OC3PreloadConfig (TIM2,TIM_OCPreload_Enable );
+	TIM_OC4PreloadConfig (TIM2,TIM_OCPreload_Enable );
+	
+	TIM_Cmd(TIM2,ENABLE) ;
+}
+
+
+
+
+
+/*************************************************/
+void mt1 (u16 a , u16 b , u16 t)//µç»ú1µÄ²ÎÊý
+{
+	TIM_SetCompare4 (TIM4,a) ;
+	TIM_SetCompare3 (TIM4,b) ;
+	for(u16 i = 1 ; i <= t ; i++)
+	{
+		delay_ms (100) ;
+	}
+	TIM_SetCompare4 (TIM4,0) ;
+	TIM_SetCompare3 (TIM4,0) ;	
+	
+}
+void mt2 (u16 a , u16 b , u16 t)//µç»ú2µÄ²ÎÊý
+{
+	TIM_SetCompare1 (TIM4,a) ;
+	TIM_SetCompare2 (TIM4,b) ;
+	for(u16 i = 1 ; i <= t ; i++)
+	{
+		delay_ms (100) ;
+	}
+	TIM_SetCompare1 (TIM4,0) ;
+	TIM_SetCompare2 (TIM4,0) ;	
+	
+}
+
+
+
+
+
+
+int main(void)
+{
+    delay_init();
+    PWM_Init1(199,7199) ;
+	PWM_Init2(199,7199) ;
+	cgq();
+//	TIM_SetCompare4 (TIM4,150) ;
+//	TIM_SetCompare2 (TIM4,30) ;
+//	delay_ms (1200) ;
+//	TIM_SetCompare4 (TIM4,30) ;
+//	TIM_SetCompare2 (TIM4,150) ;
+//	delay_ms (1200) ;
+//	TIM_SetCompare4 (TIM4,0) ;
+//	TIM_SetCompare2 (TIM4,0) ;
+//	mt1 (150 , 30 ,10) ;
+//	delay_ms (1000) ;
+//	mt1 (30 , 150 ,10) ;
+//	while(1)
+//	{
+//		if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2))
+//		{
+//			TIM_SetCompare4 (TIM4,150) ;
+//			TIM_SetCompare2 (TIM4,30) ;
+//			delay_ms(10) ;
+//		}
+//		TIM_SetCompare4 (TIM4,0) ;
+//		TIM_SetCompare2 (TIM4,0) ;
+//	}
+//	while(1)
+//	{
+//		TIM_SetCompare1 (TIM2,150) ;
+//		TIM_SetCompare2 (TIM2,30) ;
+//		TIM_SetCompare3 (TIM2,150) ;
+//		TIM_SetCompare4 (TIM2,30) ;
+//		if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_8))
+//		{
+//			TIM_SetCompare1 (TIM2 , 30) ;
+//			TIM_SetCompare2 (TIM2,150) ;
+
+//		}
+//		if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_9))
+//		{
+
+//			TIM_SetCompare3 (TIM2 , 0) ;
+//			TIM_SetCompare4 (TIM2,0) ;
+//		}
+//		delay_ms (10) ;
+//	}
+//	mt1 (150 , 30 , 10) ;
+//	delay_ms (100) ;
+//	mt1 (30 , 150 , 10) ;
+//	delay_ms (100) ;
+//	mt3 (150 , 30 , 10) ;
+//	delay_ms (100) ;
+//	mt3 (30 , 150 , 10) ;
+	while(1)
+	{
+		
+		if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_8))
+		{
+//			mt1(30 , 150 , 1) ;
+				TIM_SetCompare4 (TIM4,30) ;
+	TIM_SetCompare3 (TIM4,150) ;
+			TIM_SetCompare1 (TIM4,150) ;
+	TIM_SetCompare2 (TIM4,30) ;
+	for(u16 i = 1 ; i <= 1 ; i++)
+	{
+		delay_ms (100) ;
+	}
+	TIM_SetCompare4 (TIM4,0) ;
+	TIM_SetCompare3 (TIM4,0) ;
+	TIM_SetCompare1 (TIM4,0) ;
+	TIM_SetCompare2 (TIM4,0) ;
+//			mt1(30 , 150 , 1) ;
+//			mt2(30 , 150 , 0) ;
+//			mydelay (1) ;
+//			mt1(0 , 0 , 0) ;
+//			mt2(0 , 0 , 0) ;
+//			mydelay (1) ;
+		}
+		else
+		{
+//			mt1(150 , 30 , 1) ;
+				TIM_SetCompare4 (TIM4,150) ;
+	TIM_SetCompare3 (TIM4,30) ;
+				TIM_SetCompare1 (TIM4,30) ;
+	TIM_SetCompare2 (TIM4,150) ;
+	for(u16 i = 1 ; i <= 1 ; i++)
+	{
+		delay_ms (100) ;
+	}
+	TIM_SetCompare4 (TIM4,0) ;
+	TIM_SetCompare3 (TIM4,0) ;
+	TIM_SetCompare1 (TIM4,0) ;
+	TIM_SetCompare2 (TIM4,0) ;
+//			mt1(150 , 30 , 1) ;
+//			mt2(300 , 100 , 0) ;
+//			mydelay (1) ;
+//			mt1(0 , 0 , 0) ;
+//			mt2(0 , 0 , 0) ;
+//			mydelay (1) ;
+		}
+	}
+}

@@ -2,6 +2,7 @@
 #include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
 #include "sys.h"
+/**********************Sensor initialization**************************/
 void cgq (void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -15,6 +16,7 @@ void cgq (void)
   GPIO_Init(GPIOA,&GPIO_InitStructure);
 
 }
+/*************************motor initialization*****************************/
 void MOTER_Init1(void)
 {
 	GPIO_InitTypeDef GPIO_IS1 ;
@@ -27,6 +29,9 @@ void MOTER_Init1(void)
 	
 	GPIO_Init(GPIOB,&GPIO_IS1) ;
 }
+
+
+/************************PWM initialization*********************************/
 void PWM_Init1(u16 arr , u16 psc)
 {
 	TIM_TimeBaseInitTypeDef TIM_TBS1 ;
@@ -51,17 +56,25 @@ void PWM_Init1(u16 arr , u16 psc)
 	TIM_OCIS1.TIM_Pulse = 0 ;
 	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_Low ;
 //	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_High ;
+  TIM_OC1Init (TIM4,&TIM_OCIS1) ;
 	TIM_OC2Init (TIM4,&TIM_OCIS1) ;
 	TIM_OC3Init (TIM4,&TIM_OCIS1) ;
 	TIM_OC4Init (TIM4,&TIM_OCIS1) ;
 	
+	TIM_OC1PreloadConfig (TIM2,TIM_OCPreload_Enable );
 	TIM_OC2PreloadConfig (TIM4,TIM_OCPreload_Enable );
 	TIM_OC3PreloadConfig (TIM4,TIM_OCPreload_Enable );
 	TIM_OC4PreloadConfig (TIM4,TIM_OCPreload_Enable );
 	
 	TIM_Cmd(TIM4,ENABLE) ;
 }
-void mt1 (u16 a , u16 b , u16 t)
+
+
+
+
+
+/********************parameters of motors************************/
+void mt1 (u16 a , u16 b , u16 t)//parameters of L mt1
 {
 	TIM_SetCompare4 (TIM4,a) ;
 	TIM_SetCompare3 (TIM4,b) ;
@@ -69,11 +82,11 @@ void mt1 (u16 a , u16 b , u16 t)
 	{
 		delay_ms (100) ;
 	}
-	TIM_SetCompare4 (TIM4,0) ;
-	TIM_SetCompare3 (TIM4,0) ;	
+	TIM_SetCompare4 (TIM4,0) ;//Forward
+	TIM_SetCompare3 (TIM4,0) ;//Back
 	
 }
-void mt2 (u16 a , u16 b , u16 t)
+void mt2 (u16 a , u16 b , u16 t)//parameters of R mt2
 {
 	TIM_SetCompare1 (TIM4,a) ;
 	TIM_SetCompare2 (TIM4,b) ;
@@ -81,83 +94,21 @@ void mt2 (u16 a , u16 b , u16 t)
 	{
 		delay_ms (100) ;
 	}
-	TIM_SetCompare1 (TIM4,0) ;
-	TIM_SetCompare2 (TIM4,0) ;	
+	TIM_SetCompare1 (TIM4,0) ;//Back
+	TIM_SetCompare2 (TIM4,0) ;//Forward
 	
 }
-void MOTER_Init2(void)
-{
-	GPIO_InitTypeDef GPIO_IS2 ;
-	
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
-	
-	GPIO_IS2.GPIO_Mode = GPIO_Mode_AF_PP ;
-	GPIO_IS2.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 |GPIO_Pin_3  ;
-	GPIO_IS2.GPIO_Speed = GPIO_Speed_50MHz ;
-	
-	GPIO_Init(GPIOA,&GPIO_IS2) ;
-}
-void PWM_Init2(u16 arr , u16 psc)
-{
-	TIM_TimeBaseInitTypeDef TIM_TBS2 ;
-	TIM_OCInitTypeDef TIM_OCIS2 ;
-	
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2,ENABLE);
-	
-	MOTER_Init2() ;
-	
-	TIM_DeInit(TIM1) ;
-	
-	TIM_TBS2.TIM_Period = arr ;
-	TIM_TBS2.TIM_ClockDivision = 0;
-	TIM_TBS2.TIM_CounterMode = TIM_CounterMode_Up ;
-	TIM_TBS2.TIM_Prescaler = psc ;
-	TIM_TBS2.TIM_RepetitionCounter = 0 ;
-	
-	TIM_TimeBaseInit (TIM2,&TIM_TBS2) ;
-	
-	TIM_OCIS2.TIM_OCMode = TIM_OCMode_PWM2 ;
-	TIM_OCIS2.TIM_OutputState = TIM_OutputState_Enable ;
-	TIM_OCIS2.TIM_Pulse = 0 ;
-	TIM_OCIS2.TIM_OCPolarity = TIM_OCPolarity_Low ;
-//	TIM_OCIS2.TIM_OCPolarity = TIM_OCPolarity_High ;
-	TIM_OC2Init (TIM2,&TIM_OCIS2) ;
-	TIM_OC3Init (TIM2,&TIM_OCIS2) ;
-	TIM_OC4Init (TIM2,&TIM_OCIS2) ;
-	
-	TIM_OC2PreloadConfig (TIM2,TIM_OCPreload_Enable );
-	TIM_OC3PreloadConfig (TIM2,TIM_OCPreload_Enable );
-	TIM_OC4PreloadConfig (TIM2,TIM_OCPreload_Enable );
-	
-	TIM_Cmd(TIM2,ENABLE) ;
-}
-void mt3 (u16 a , u16 b , u16 t)
-{
-	TIM_SetCompare4 (TIM2,a) ;
-	TIM_SetCompare3 (TIM2,b) ;
-	for(u16 i = 1 ; i <= t ; i++)
-	{
-		delay_ms (100) ;
-	}
-	TIM_SetCompare4 (TIM2,0) ;
-	TIM_SetCompare3 (TIM2,0) ;	
-}
-void mt4 (u16 a , u16 b , u16 t)
-{
-	TIM_SetCompare1 (TIM2,a) ;
-	TIM_SetCompare2 (TIM2,b) ;
-	for(u16 i = 1 ; i <= t ; i++)
-	{
-		delay_ms (100) ;
-	}
-	TIM_SetCompare1 (TIM2,0) ;
-	TIM_SetCompare2 (TIM2,0) ;	
-}
+
+
+
+
+
+
 int main(void)
 {
     delay_init();
     PWM_Init1(199,7199) ;
-	PWM_Init2(199,7199) ;
+
 	cgq();
 //	TIM_SetCompare4 (TIM4,150) ;
 //	TIM_SetCompare2 (TIM4,30) ;
@@ -211,14 +162,13 @@ int main(void)
 	while(1)
 	{
 		
-		if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_8))
+		if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_10)&&!GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_9))
 		{
-//			mt1(30 , 150 , 1) ;
-				TIM_SetCompare4 (TIM4,30) ;
-	TIM_SetCompare3 (TIM4,150) ;
-			TIM_SetCompare1 (TIM4,30) ;
+				TIM_SetCompare4 (TIM4,150) ;
+	TIM_SetCompare3 (TIM4,10) ;
+			TIM_SetCompare1 (TIM4,10) ;
 	TIM_SetCompare2 (TIM4,150) ;
-	for(u16 i = 1 ; i <= 1 ; i++)
+	for(u16 i = 1 ; i <= 1 ; i++)//senser delay
 	{
 		delay_ms (100) ;
 	}
@@ -235,15 +185,15 @@ int main(void)
 		}
 		else
 		{
-//			mt1(150 , 30 , 1) ;
-				TIM_SetCompare4 (TIM4,150) ;
-	TIM_SetCompare3 (TIM4,30) ;
+				TIM_SetCompare4 (TIM4,10) ;
+	TIM_SetCompare3 (TIM4,150) ;
 				TIM_SetCompare1 (TIM4,150) ;
-	TIM_SetCompare2 (TIM4,30) ;
-	for(u16 i = 1 ; i <= 1 ; i++)
+	TIM_SetCompare2 (TIM4,10) ;
+	for(u16 i = 1 ; i <= 1 ; i++)//senser delay
 	{
 		delay_ms (100) ;
 	}
+
 	TIM_SetCompare4 (TIM4,0) ;
 	TIM_SetCompare3 (TIM4,0) ;
 	TIM_SetCompare1 (TIM4,0) ;
@@ -254,6 +204,8 @@ int main(void)
 //			mt1(0 , 0 , 0) ;
 //			mt2(0 , 0 , 0) ;
 //			mydelay (1) ;
+
+
 		}
 	}
 }

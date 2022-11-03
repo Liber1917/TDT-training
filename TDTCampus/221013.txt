@@ -1,0 +1,180 @@
+#include <stdio.h>
+#include "stm32f10x.h"
+#include "stm32f10x_gpio.h"
+#include "sys.h"
+/**********************Sensor initialization**************************/
+void cgq (void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+  
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_8 |GPIO_Pin_9 |GPIO_Pin_10|GPIO_Pin_11 ;
+  GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING ;
+//  GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+  
+  GPIO_Init(GPIOA,&GPIO_InitStructure);
+
+}
+/*************************motor initialization*****************************/
+void MOTER_Init1(void)
+{
+	GPIO_InitTypeDef GPIO_IS1 ;
+	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+	
+	GPIO_IS1.GPIO_Mode = GPIO_Mode_AF_PP ;
+	GPIO_IS1.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 |GPIO_Pin_6  ;
+	GPIO_IS1.GPIO_Speed = GPIO_Speed_50MHz ;
+	
+	GPIO_Init(GPIOB,&GPIO_IS1) ;
+}
+
+
+/************************PWM initialization*********************************/
+void PWM_Init1(u16 arr , u16 psc)
+{
+	TIM_TimeBaseInitTypeDef TIM_TBS1 ;
+	TIM_OCInitTypeDef TIM_OCIS1 ;
+	
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4,ENABLE);
+	
+	MOTER_Init1() ;
+	
+	TIM_DeInit(TIM4) ;
+	
+	TIM_TBS1.TIM_Period = arr ;
+	TIM_TBS1.TIM_ClockDivision = 0;
+	TIM_TBS1.TIM_CounterMode = TIM_CounterMode_Up ;
+	TIM_TBS1.TIM_Prescaler = psc ;
+	TIM_TBS1.TIM_RepetitionCounter = 0 ;
+	
+	TIM_TimeBaseInit (TIM4,&TIM_TBS1) ;
+	
+	TIM_OCIS1.TIM_OCMode = TIM_OCMode_PWM2 ;
+	TIM_OCIS1.TIM_OutputState = TIM_OutputState_Enable ;
+	TIM_OCIS1.TIM_Pulse = 0 ;
+	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_Low ;
+//	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_High ;
+  TIM_OC1Init (TIM4,&TIM_OCIS1) ;
+	TIM_OC2Init (TIM4,&TIM_OCIS1) ;
+	TIM_OC3Init (TIM4,&TIM_OCIS1) ;
+	TIM_OC4Init (TIM4,&TIM_OCIS1) ;
+	
+	TIM_OC1PreloadConfig (TIM2,TIM_OCPreload_Enable );
+	TIM_OC2PreloadConfig (TIM4,TIM_OCPreload_Enable );
+	TIM_OC3PreloadConfig (TIM4,TIM_OCPreload_Enable );
+	TIM_OC4PreloadConfig (TIM4,TIM_OCPreload_Enable );
+	
+	TIM_Cmd(TIM4,ENABLE) ;
+}
+
+
+
+
+
+/********************parameters of motors************************/
+void mt (u16 a , u16 b , u16 c, u16 d, u16 t)
+{
+	                   /****Switch to Pull mode****/
+	/*parameters of R mt1*/
+	TIM_SetCompare4 (TIM4,a) ;//Back
+	TIM_SetCompare3 (TIM4,b) ;//Forward
+	/*parameters of L mt2*/
+	TIM_SetCompare2 (TIM4,c) ;//Back
+	TIM_SetCompare1 (TIM4,d) ;//Forward
+	for(u16 i = 1 ; i <= t ; i++)//senser delay
+	{
+		delay_ms (100) ;
+	}
+	TIM_SetCompare4 (TIM4,0) ;
+	TIM_SetCompare3 (TIM4,0) ;
+	TIM_SetCompare1 (TIM4,0) ;
+	TIM_SetCompare2 (TIM4,0) ;
+}
+
+
+/***************/
+int main(void)
+{
+    delay_init();
+    PWM_Init1(199,7199) ;//PWM Setting
+
+	cgq();
+
+	while(1)
+	{
+		
+	/**All White*/
+	if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_10)&&!GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_9)&&!GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_8)&&!GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_11))
+	{
+		/*Left rotation*/
+		mt(80,100,100,115,1);//Yet to be vertified
+
+	}
+	else
+	{
+		/*All Black*/
+		if(GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_10)&&GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_9)&&GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_8)&&GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_11))
+		{
+			/*Stop for n second*/
+			mt(0,0,0,0,5);
+			/*Right self rotation*/
+			mt(120,90,90,120,3);//Yet to be vertified
+		}
+		else 
+		{	
+			if(GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_8)&&GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_11)&&!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_9)&&!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_10))//Side Black&&Middle White			
+				{
+					do
+					{
+						/*Left rotation*/
+						mt(80,120,100,120,1);//Yet to be vertified
+					}
+						while(GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_9));//Middle Right
+				}
+			else
+			{
+				if(GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_11))//Left Side Black
+				 {
+						do
+						{
+						/*Left rotation*/
+						mt(80,120,100,120,1);//Yet to be vertified
+						}
+						while(GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_9));//Middle Right
+				 }
+				else if(GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_8))//Right Side Black
+				 {
+						do
+						{
+						/*Right rotation*/
+						mt(100,120,800,120,1);//Yet to be vertified
+						}
+						while(GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_10));//Middle Left
+				 }
+				else 
+				{
+					/*Move Strait*/
+					/*Middle space yet to be adjusted*/
+					if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_9))//Right White
+						{
+							/*Go Left*/
+							mt(80,120,100,120,1);//Yet to be vertified
+						}
+					else if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_10))//Left White
+						{
+							/*Go Right*/
+							mt(100,120,80,120,1);//Yet to be vertified
+						}
+					else if(!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_10)&&!GPIO_ReadInputDataBit (GPIOA,GPIO_Pin_9))//Middle White
+						{
+							mt(80,120,80,120,1);//Yet to be vertified
+						}
+				}
+			}
+
+		}
+	}
+ }
+}	

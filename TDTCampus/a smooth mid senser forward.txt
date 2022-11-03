@@ -1,0 +1,317 @@
+#include <stdio.h>
+#include "stm32f10x.h"
+#include "stm32f10x_gpio.h"
+#include "sys.h"
+/**********************Sensor initialization**************************/
+void cgq(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	//  GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+}
+/*************************moter initialization*****************************/
+void MOTER_Init1(void)
+{
+	GPIO_InitTypeDef GPIO_IS1;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+
+	GPIO_IS1.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_IS1.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_6;
+	GPIO_IS1.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_Init(GPIOB, &GPIO_IS1);
+}
+
+void MOTER_Init2(void)//for shooter
+{
+	GPIO_InitTypeDef GPIO_IS1;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+
+	GPIO_IS1.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_IS1.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+	GPIO_IS1.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_Init(GPIOB, &GPIO_IS1);
+}
+/*************************loader initialization**********************************/
+void Load_Init(void)//for load&reload
+{
+	GPIO_InitTypeDef GPIO_IS1;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
+	GPIO_IS1.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_IS1.GPIO_Pin = GPIO_Pin_6;
+	GPIO_IS1.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_Init(GPIOA, &GPIO_IS1);
+}
+
+/*************************lever initialization**********************************/
+void Lever_Init(void)//for load&reload
+{
+	GPIO_InitTypeDef GPIO_IS1;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
+	GPIO_IS1.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_IS1.GPIO_Pin = GPIO_Pin_7;
+	GPIO_IS1.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_Init(GPIOA, &GPIO_IS1);
+}
+/************************PWM initialization*********************************/
+void PWM_Init1(u16 arr, u16 psc)//PWM for moters
+{
+	TIM_TimeBaseInitTypeDef TIM_TBS1;
+	TIM_OCInitTypeDef TIM_OCIS1;
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+
+	MOTER_Init1();
+
+	TIM_DeInit(TIM4);
+
+	TIM_TBS1.TIM_Period = arr;
+	TIM_TBS1.TIM_ClockDivision = 0;
+	TIM_TBS1.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TBS1.TIM_Prescaler = psc;
+	TIM_TBS1.TIM_RepetitionCounter = 0;
+
+	TIM_TimeBaseInit(TIM4, &TIM_TBS1);
+
+	TIM_OCIS1.TIM_OCMode = TIM_OCMode_PWM2;
+	TIM_OCIS1.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCIS1.TIM_Pulse = 0;
+	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_Low;
+	//	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_High ;
+	TIM_OC1Init(TIM4, &TIM_OCIS1);//B6
+	TIM_OC2Init(TIM4, &TIM_OCIS1);//B7
+	TIM_OC3Init(TIM4, &TIM_OCIS1);//B8
+	TIM_OC4Init(TIM4, &TIM_OCIS1);//B9
+
+	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+	TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+	TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
+	TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
+
+	TIM_Cmd(TIM4, ENABLE);
+}
+void PWM_Init2(u16 arr, u16 psc)//PWM for shooter
+{
+	TIM_TimeBaseInitTypeDef TIM_TBS1;
+	TIM_OCInitTypeDef TIM_OCIS1;
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+	MOTER_Init2();
+
+	TIM_DeInit(TIM3);
+
+	TIM_TBS1.TIM_Period = arr;
+	TIM_TBS1.TIM_ClockDivision = 0;
+	TIM_TBS1.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TBS1.TIM_Prescaler = psc;
+	TIM_TBS1.TIM_RepetitionCounter = 0;
+
+	TIM_TimeBaseInit(TIM3, &TIM_TBS1);
+
+	TIM_OCIS1.TIM_OCMode = TIM_OCMode_PWM2;
+	TIM_OCIS1.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCIS1.TIM_Pulse = 0;
+	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_Low;
+	//	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_High ;
+
+	TIM_OC3Init(TIM3, &TIM_OCIS1);//B0
+	TIM_OC4Init(TIM3, &TIM_OCIS1);//B1
+
+
+
+	TIM_OC3PreloadConfig(TIM3, TIM_OCPreload_Enable);
+	TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable);
+
+	TIM_Cmd(TIM3, ENABLE);
+}
+
+void PWM_Init3(u16 arr, u16 psc)//PWM for loader
+{
+	TIM_TimeBaseInitTypeDef TIM_TBS1;
+	TIM_OCInitTypeDef TIM_OCIS1;
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+	MOTER_Init2();
+
+	TIM_DeInit(TIM3);
+
+	TIM_TBS1.TIM_Period = arr;
+	TIM_TBS1.TIM_ClockDivision = 0;
+	TIM_TBS1.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TBS1.TIM_Prescaler = psc;
+	TIM_TBS1.TIM_RepetitionCounter = 0;
+
+	TIM_TimeBaseInit(TIM3, &TIM_TBS1);
+
+	TIM_OCIS1.TIM_OCMode = TIM_OCMode_PWM2;
+	TIM_OCIS1.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCIS1.TIM_Pulse = 0;
+	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_Low;
+	//	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_High ;
+
+	TIM_OC1Init(TIM3, &TIM_OCIS1);//A6
+
+
+
+
+	TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
+
+
+	TIM_Cmd(TIM3, ENABLE);
+}
+
+void PWM_Init4(u16 arr, u16 psc)//PWM for lever
+{
+	TIM_TimeBaseInitTypeDef TIM_TBS1;
+	TIM_OCInitTypeDef TIM_OCIS1;
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+	MOTER_Init2();
+
+	TIM_DeInit(TIM3);
+
+	TIM_TBS1.TIM_Period = arr;
+	TIM_TBS1.TIM_ClockDivision = 0;
+	TIM_TBS1.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TBS1.TIM_Prescaler = psc;
+	TIM_TBS1.TIM_RepetitionCounter = 0;
+
+	TIM_TimeBaseInit(TIM3, &TIM_TBS1);
+
+	TIM_OCIS1.TIM_OCMode = TIM_OCMode_PWM2;
+	TIM_OCIS1.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCIS1.TIM_Pulse = 0;
+	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_Low;
+	//	TIM_OCIS1.TIM_OCPolarity = TIM_OCPolarity_High ;
+
+	TIM_OC2Init(TIM3, &TIM_OCIS1);//A7
+
+
+
+
+	TIM_OC2PreloadConfig(TIM3, TIM_OCPreload_Enable);
+
+
+	TIM_Cmd(TIM3, ENABLE);
+}
+/********************parameters of motors************************/
+void mt(u16 a, u16 b, u16 c, u16 d, u16 t)
+{
+	/****Switch to Pull mode****/
+/*parameters of R mt1*/
+	TIM_SetCompare4(TIM4, a);//Back
+	TIM_SetCompare3(TIM4, b);//Forward
+	/*parameters of L mt2*/
+	TIM_SetCompare2(TIM4, c);//Back
+	TIM_SetCompare1(TIM4, d);//Forward
+	for (u16 i = 1; i <= t; i++)//senser delay
+	{
+		delay_ms(10);
+	}
+	TIM_SetCompare4(TIM4, 0);
+	TIM_SetCompare3(TIM4, 0);
+	TIM_SetCompare1(TIM4, 0);
+	TIM_SetCompare2(TIM4, 0);
+}
+
+void mt1(u16 a, u16 b, u16 t)//for shooter
+{
+	/****Switch to Pull mode****/
+
+	TIM_SetCompare1(TIM3, a);//Back
+	TIM_SetCompare2(TIM3, b);//Forward
+
+	for (u16 i = 1; i <= t; i++)//senser delay
+	{
+		delay_ms(10);
+	}
+
+	TIM_SetCompare1(TIM4, 0);
+	TIM_SetCompare2(TIM4, 0);
+}
+
+
+/*******main function********/
+//int main(void)
+//{
+//    delay_init();
+//    PWM_Init1(199,7199) ;//PWM Setting
+//		PWM_Init2(199,7199) ;//PWM Setting
+//		
+//	cgq();
+
+//	while(1)
+//	{
+//		
+//	/**All White*/
+
+//			/*Right self rotation*/
+//			mt(120,90,90,120,3);//Yet to be vertified
+//			break;
+
+
+// }
+//}	
+int main(void)
+{
+	delay_init();
+	PWM_Init1(199, 119);//PWM Setting
+	PWM_Init2(199, 119);//PWM Setting
+	PWM_Init3(199, 119);//PWM Setting
+	PWM_Init4(199, 119);//PWM Setting
+	cgq();
+
+	while (1)
+	{
+
+if (!GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11) && GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_10) && !GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9) && !GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8))
+				{//mid left black
+//					do
+//					{
+						/*go left*/
+//						do
+							mt(55,120,80,120,7);//yet to be vertified
+			delay_ms (10);
+//						while (!GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11) && GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_10) && GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9) && !GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8));
+//					} while (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_10));//?
+				}
+				else if (!GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11) && !GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_10) && GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9) && !GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8))
+				{//mid right black
+//					do
+//					{
+						//go right
+						mt(80,120,55,120,7);
+			delay_ms (10);
+					}
+					else if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_10) && GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9) )
+				{//mid right black
+//					do
+//					{
+						//go right
+						mt(80,120,80,120,7);
+			delay_ms (10);
+//					} while (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_9));//?
+				}
+
+		}
+	}
+
